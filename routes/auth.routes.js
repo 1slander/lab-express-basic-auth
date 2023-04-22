@@ -77,6 +77,8 @@ router.get("/login", (req, res) => res.render("auth/login"));
 router.post("/login", async (req, res, next) => {
   const { username, password } = req.body;
 
+  console.log("SESSION =====>", req.session);
+
   if (!username || !password) {
     res.render("auth/login", { errorMessage: "All files are mandatory." });
     return;
@@ -89,7 +91,8 @@ router.post("/login", async (req, res, next) => {
       res.render("auth/login", { errorMessage: "Username doesn't exist." });
       return;
     } else if (bcryptjs.compareSync(password, findUser.password)) {
-      res.render("users/user-profile", { findUser });
+      req.session.currentUser = findUser;
+      res.redirect("/userProfile");
     } else {
       res.render("auth/login", { errorMessage: "Incorrect password." });
     }
@@ -99,8 +102,21 @@ router.post("/login", async (req, res, next) => {
 });
 
 /* ======================
+    LOG OUT
+   ====================== */
+
+router.post("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) next(err);
+    res.redirect("/");
+  });
+});
+
+/* ======================
     USER PROFILE
    ====================== */
 
-router.get("/userProfile", (req, res) => res.render("users/user-profile"));
+router.get("/userProfile", (req, res) =>
+  res.render("users/user-profile", { userInSession: req.session.currentUser })
+);
 module.exports = router;
