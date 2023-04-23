@@ -3,6 +3,9 @@ const router = express.Router();
 
 const User = require("../models/User.model");
 
+//middleware
+
+const { isLoggedIn, isLoggedOut } = require("../middleware/route-guard");
 const bcryptjs = require("bcryptjs");
 const { default: mongoose } = require("mongoose");
 const saltRounds = 10;
@@ -11,11 +14,11 @@ const saltRounds = 10;
     SIGN UP
    ====================== */
 
-router.get("/signup", (req, res) => {
+router.get("/signup", isLoggedOut, (req, res) => {
   res.render("auth/signup.hbs");
 });
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", isLoggedOut, async (req, res) => {
   const { username, password } = req.body;
   console.log(username, password);
 
@@ -72,9 +75,9 @@ router.post("/signup", async (req, res) => {
     LOGIN
    ====================== */
 
-router.get("/login", (req, res) => res.render("auth/login"));
+router.get("/login", isLoggedOut, (req, res) => res.render("auth/login"));
 
-router.post("/login", async (req, res, next) => {
+router.post("/login", isLoggedOut, async (req, res, next) => {
   const { username, password } = req.body;
 
   console.log("SESSION =====>", req.session);
@@ -105,7 +108,7 @@ router.post("/login", async (req, res, next) => {
     LOG OUT
    ====================== */
 
-router.post("/logout", (req, res, next) => {
+router.post("/logout", isLoggedOut, (req, res, next) => {
   req.session.destroy((err) => {
     if (err) next(err);
     res.redirect("/");
@@ -116,7 +119,19 @@ router.post("/logout", (req, res, next) => {
     USER PROFILE
    ====================== */
 
-router.get("/userProfile", (req, res) =>
+router.get("/userProfile", isLoggedIn, (req, res) =>
   res.render("users/user-profile", { userInSession: req.session.currentUser })
 );
+
+/* ======================
+    Protected routes
+   ====================== */
+
+router.get("/main", isLoggedIn, (req, res) =>
+  res.render("auth/main", { userInSession: req.session.currentUser })
+);
+router.get("/private", isLoggedIn, (req, res) =>
+  res.render("auth/private", { userInSession: req.session.currentUser })
+);
+
 module.exports = router;
